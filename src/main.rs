@@ -27,14 +27,11 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-
-    println!("file: {}, mem_addr: {}", args.file, args.address);
-
     let state = &mut State::new();
+    // TODO: error handling
     let file = args.file;
     let mem_addr = args.address;
     read_file_to_memory(state, &file, mem_addr);
-
     loop {
         emulate8080(state);
     }

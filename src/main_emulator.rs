@@ -7,8 +7,6 @@ use std::fs;
 
 fn unimplemented_instruction(state: &State) {
     println!("Error: Unimplemented instruction");
-    // println!("memory length: {:x}, pc val: {:x}", state.memory.len(), state.registers.pc);
-    // println!("instruction: {:x} {:x} {:x}", state.memory[state.registers.pc],  state.memory[state.registers.pc+1],  state.memory[state.registers.pc+2]);
     process::exit(1);
 }
 
@@ -17,14 +15,14 @@ pub fn read_file_to_memory(state: &mut State, file: &str, mem_addr: usize) {
     state.memory.resize(mem_addr + file_content.len(), 0);
     state.memory[mem_addr.. mem_addr+ file_content.len()].copy_from_slice(&file_content);
     state.registers.pc = mem_addr;
-
 }
 
 // TODO: match in hex or binary?
 pub fn emulate8080(state: &mut State) {
     let opcode = state.memory[state.registers.pc];
-    // println!("current instruction: {:x}", &opcode);
     println!("current instruction: {:#x} {:#x} {:#x}", state.memory[state.registers.pc],  state.memory[state.registers.pc+1],  state.memory[state.registers.pc+2]);
+    // println!("TEST!");
+    // test(state);
     match opcode {
         0x00 => (),
         0x01 | 0x11 | 0x21 | 0x31=> lxi(state, opcode),
