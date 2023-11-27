@@ -17,7 +17,6 @@ pub fn read_file_to_memory(state: &mut State, file: &str, mem_addr: usize) {
     state.registers.pc = mem_addr;
 }
 
-// TODO: match in hex or binary?
 pub fn emulate8080(state: &mut State) {
     let opcode = state.memory[state.registers.pc];
     println!("current instruction: {:#x} {:#x} {:#x}", state.memory[state.registers.pc],  state.memory[state.registers.pc+1],  state.memory[state.registers.pc+2]);
@@ -48,9 +47,11 @@ pub fn emulate8080(state: &mut State) {
         0xa7 => unimplemented_instruction(state),
         0xaf => unimplemented_instruction(state),
         0xc1 => unimplemented_instruction(state),
-        0xc2 => unimplemented_instruction(state),
-        0xc3 => jmp(state),
+        0xc2 | 0xc3 | 0xca |
+        0xd2 | 0xda | 0xe2 | 
+        0xea | 0xf2 | 0xfa => jmp_cond(state, opcode),
         0xc5 => unimplemented_instruction(state),
+        0xc6 => adi(state),
         0xc9 => unimplemented_instruction(state),
         0xcd => unimplemented_instruction(state),
         0xd1 => unimplemented_instruction(state),
@@ -71,7 +72,7 @@ pub fn emulate8080(state: &mut State) {
     // state.registers.pc +=1;
     /* print status */
     println!("##### REGISTERS #####");
-    println!("A: {}, B: {}, C: {}, D: {}, E: {}, H: {}, L: {}, SP: {:#x}, PC: {:#x}",
+    println!("A: {:#x}, B: {:#x}, C: {:#x}, D: {:#x}, E: {:#x}, H: {:#x}, L: {:#x}, SP: {:#x}, PC: {:#x}",
             state.registers.a, state.registers.b, state.registers.c, state.registers.d,
     state.registers.e, state.registers.h, state.registers.l, state.registers.sp, state.registers.pc);
     println!("##### FLAGS #####");
