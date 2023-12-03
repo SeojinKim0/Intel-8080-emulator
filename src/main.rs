@@ -1,4 +1,5 @@
 // #![allow(warnings)]
+// TODO: cycle counting
 
 use clap::Parser;
 use clap_num::maybe_hex;
@@ -32,6 +33,8 @@ fn main() {
     let file = args.file;
     let mem_addr = args.address;
     read_file_to_memory(state, &file, mem_addr);
+    // let a : u32 = 1;
+    // println!("{:b}", a.wrapping_sub(13))
     loop {
         emulate8080(state);
     }

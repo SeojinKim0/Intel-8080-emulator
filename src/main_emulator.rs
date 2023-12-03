@@ -54,22 +54,26 @@ pub fn emulate8080(state: &mut State) {
         0xc6 => adi(state),
         0xc9 => unimplemented_instruction(state),
         0xcd => unimplemented_instruction(state),
+        0xce => aci(state),
         0xd1 => unimplemented_instruction(state),
         0xd3 => unimplemented_instruction(state),
         0xd5 => unimplemented_instruction(state),
+        0xd6 => sui(state),
+        0xde => sbi(state),
         0xe1 => unimplemented_instruction(state),
         0xe5 => unimplemented_instruction(state),
         0xe6 => ani(state),
         0xed => unimplemented_instruction(state),
+        0xee => xri(state),
         0xf1 => unimplemented_instruction(state),
         0xf5 => unimplemented_instruction(state),
+        0xf6 => ori(state),
         0xfb => unimplemented_instruction(state),
-        0xfe => unimplemented_instruction(state),
+        0xfe => cpi(state),
         _ => {
             unimplemented_instruction(state)
         },
     }
-    // state.registers.pc +=1;
     /* print status */
     println!("##### REGISTERS #####");
     println!("A: {:#x}, B: {:#x}, C: {:#x}, D: {:#x}, E: {:#x}, H: {:#x}, L: {:#x}, SP: {:#x}, PC: {:#x}",
@@ -78,5 +82,8 @@ pub fn emulate8080(state: &mut State) {
     println!("##### FLAGS #####");
     println!("S: {}, Z: {}, P: {}, CY: {}, AC: {}\n",
             state.flags.s, state.flags.z, state.flags.p, state.flags.cy, state.flags.ac);
+    // if opcode == 0xce {
+    //     process::exit(1);
+    // }
 }
 

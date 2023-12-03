@@ -35,18 +35,23 @@ fn set_parity(state: &mut State) {
     let mut x = state.registers.a ^ (state.registers.a >> 4);
     x = x ^ (x >> 2);
     x = x ^ (x >> 1);
-    if (x & 1) == 1 { // check the last bit. if 1, odd parity, even otherwise
+    if (x & 1) == 1 { // if 1, odd parity, even otherwise
         state.flags.p = 0;
     } else {
         state.flags.p = 1;
     }
 }
-fn set_carry(state: &mut State, result: u16) {
+fn set_carry_add(state: &mut State, result: u16) {
     state.flags.cy = (result > 0xff) as u8;
+}
+
+// should be right but it gives different val
+fn set_carry_sub(state: &mut State, subtrahend: u8) {
+    state.flags.cy = (state.registers.a < subtrahend) as u8;
 }
 fn set_aux_carry(state: &mut State) {
     // should take u8 and compare with 0xf
-    // TODO: Implement for DAA
+    // TODO: Implement later for DAA
 }
 
 fn reset_carry(state: &mut State) {
@@ -96,7 +101,7 @@ pub fn adi(state: &mut State) {
     set_zero(state);
     set_sign(state);
     set_parity(state);
-    set_carry(state, result);
+    set_carry_add(state, result);
     set_aux_carry(state);
 
     state.registers.pc += 2;
@@ -107,6 +112,45 @@ pub fn add(state: &mut State, opcode: u8) {
         0x80 => state.registers.a += state.registers.b,
         _ => todo!(),
     }
+}
+
+pub fn aci(state: &mut State) {
+    println!("ACI");
+    let result : u16 = u16::from(state.registers.a) + u16::from(state.memory[state.registers.pc+1]) + u16::from(state.flags.cy);
+    state.registers.a = result as u8;
+    set_zero(state);
+    set_sign(state);
+    set_parity(state);
+    set_carry_add(state, result);
+    set_aux_carry(state);
+    state.registers.pc += 2;
+}
+
+pub fn sbi(state: &mut State) {
+    println!("SBI");
+    let subtrahend : u8 = state.memory[state.registers.pc+1] + state.flags.cy;
+    set_carry_sub(state, subtrahend);
+
+    state.registers.a = state.registers.a.wrapping_sub(subtrahend);
+    set_zero(state);
+    set_sign(state);
+    set_parity(state);
+    set_aux_carry(state);
+    state.registers.pc+=2;
+}
+pub fn sui(state: &mut State) {
+    println!("SUI");
+    let subtrahend : u8 = state.memory[state.registers.pc+1];
+    set_carry_sub(state, subtrahend);
+
+    // to prevent overflow
+    // uses two's complement
+    state.registers.a = state.registers.a.wrapping_sub(subtrahend);
+    set_zero(state);
+    set_sign(state);
+    set_parity(state);
+    set_aux_carry(state);
+    state.registers.pc+=2;
 }
 /*
     ************************************************************
@@ -119,6 +163,48 @@ pub fn add(state: &mut State, opcode: u8) {
 pub fn ani(state: &mut State) {
     println!("ANI");
     state.registers.a = state.registers.a & state.memory[state.registers.pc+1];
+    set_zero(state);
+    set_sign(state);
+    set_parity(state);
+    reset_carry(state);
+    reset_aux_carry(state);
+    state.registers.pc+=2;
+}
+
+/// doesn't store the result
+pub fn cpi(state: &mut State) {
+    println!("CPI");
+    let subtrahend : u8 = state.memory[state.registers.pc+1];
+    set_carry_sub(state, subtrahend);
+
+    let tmp_a = state.registers.a;
+    // to prevent overflow
+    state.registers.a = state.registers.a.wrapping_sub(state.memory[state.registers.pc+1]);
+    // println!("A val : {:b}", state.registers.a);
+    set_zero(state);
+    set_sign(state);
+    set_parity(state);
+    set_aux_carry(state);
+    state.registers.pc+=2;
+
+    // restore the value
+    state.registers.a = tmp_a;
+}
+
+pub fn ori(state: &mut State) {
+    println!("ORI");
+    state.registers.a = state.registers.a | state.memory[state.registers.pc+1];
+    set_zero(state);
+    set_sign(state);
+    set_parity(state);
+    reset_carry(state);
+    reset_aux_carry(state);
+    state.registers.pc+=2;
+}
+
+pub fn xri(state: &mut State) {
+    println!("XRI");
+    state.registers.a = state.registers.a ^ state.memory[state.registers.pc+1];
     set_zero(state);
     set_sign(state);
     set_parity(state);
