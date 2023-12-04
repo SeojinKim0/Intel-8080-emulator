@@ -89,6 +89,80 @@ pub fn mvi(state: &mut State, opcode: u8) {
 }
 pub fn mov(state: &mut State, opcode: u8) {
     println!("MOV");
+    match opcode {
+        0x40 => state.registers.b = state.registers.b,
+        0x41 => state.registers.b = state.registers.c,
+        0x42 => state.registers.b = state.registers.d,
+        0x43 => state.registers.b = state.registers.e,
+        0x44 => state.registers.b = state.registers.h,
+        0x45 => state.registers.b = state.registers.l,
+        0x46 => state.registers.b = state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)],
+        0x47 => state.registers.b = state.registers.a,
+
+        0x48 => state.registers.c = state.registers.b,
+        0x49 => state.registers.c = state.registers.c,
+        0x4a => state.registers.c = state.registers.d,
+        0x4b => state.registers.c = state.registers.e,
+        0x4c => state.registers.c = state.registers.h,
+        0x4d => state.registers.c = state.registers.l,
+        0x4e => state.registers.c = state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)],
+        0x4f => state.registers.c = state.registers.a,
+
+        0x50 => state.registers.d = state.registers.b,
+        0x51 => state.registers.d = state.registers.c,
+        0x52 => state.registers.d = state.registers.d,
+        0x53 => state.registers.d = state.registers.e,
+        0x54 => state.registers.d = state.registers.h,
+        0x55 => state.registers.d = state.registers.l,
+        0x56 => state.registers.d = state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)],
+        0x57 => state.registers.d = state.registers.a,
+
+        0x58 => state.registers.e = state.registers.b,
+        0x59 => state.registers.e = state.registers.c,
+        0x5a => state.registers.e = state.registers.d,
+        0x5b => state.registers.e = state.registers.e,
+        0x5c => state.registers.e = state.registers.h,
+        0x5d => state.registers.e = state.registers.l,
+        0x5e => state.registers.e = state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)],
+        0x5f => state.registers.e = state.registers.a,
+
+        0x60 => state.registers.h = state.registers.b,
+        0x61 => state.registers.h = state.registers.c,
+        0x62 => state.registers.h = state.registers.d,
+        0x63 => state.registers.h = state.registers.e,
+        0x64 => state.registers.h = state.registers.h,
+        0x65 => state.registers.h = state.registers.l,
+        0x66 => state.registers.h = state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)],
+        0x67 => state.registers.h = state.registers.a,
+
+        0x68 => state.registers.l = state.registers.b,
+        0x69 => state.registers.l = state.registers.c,
+        0x6a => state.registers.l = state.registers.d,
+        0x6b => state.registers.l = state.registers.e,
+        0x6c => state.registers.l = state.registers.h,
+        0x6d => state.registers.l = state.registers.l,
+        0x6e => state.registers.l = state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)],
+        0x6f => state.registers.l = state.registers.a,
+
+        0x70 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] = state.registers.b,
+        0x71 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] = state.registers.c,
+        0x72 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] = state.registers.d,
+        0x73 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] = state.registers.e,
+        0x74 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] = state.registers.h,
+        0x75 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] = state.registers.l,
+        0x77 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] = state.registers.a,
+
+        0x78 => state.registers.a = state.registers.b,
+        0x79 => state.registers.a = state.registers.c,
+        0x7a => state.registers.a = state.registers.d,
+        0x7b => state.registers.a = state.registers.e,
+        0x7c => state.registers.a = state.registers.h,
+        0x7d => state.registers.a = state.registers.l,
+        0x7e => state.registers.a = state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)],
+        0x7f => state.registers.a = state.registers.a,
+        _ => println!("Wrong opcode in mov"),
+    }
+    state.registers.pc += 1;
 
 }
 pub fn lxi(state: &mut State, opcode: u8) {
@@ -121,6 +195,46 @@ pub fn lxi(state: &mut State, opcode: u8) {
     *                                                          *
     ************************************************************
 */
+
+pub fn inr(state: &mut State, opcode: u8) {
+    println!("INR");
+    match opcode {
+        0x04 => state.registers.b += 1,
+        0x0c => state.registers.c += 1,
+        0x14 => state.registers.d += 1,
+        0x1c => state.registers.e += 1,
+        0x24 => state.registers.h += 1,
+        0x2c => state.registers.l += 1,
+        0x34 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] += 1,
+        0x3c => state.registers.a += 1,
+        _ => println!("Wrong opcode in inr"),
+    }
+    set_zero(state);
+    set_sign(state);
+    set_parity(state);
+    set_aux_carry(state);
+    state.registers.pc += 1;
+}
+
+pub fn dcr(state: &mut State, opcode: u8) {
+    match opcode {
+        0x05 => state.registers.b -= 1,
+        0x0d => state.registers.c -= 1,
+        0x15 => state.registers.d -= 1,
+        0x1d => state.registers.e -= 1,
+        0x25 => state.registers.h -= 1,
+        0x2d => state.registers.l -= 1,
+        0x35 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] -= 1,
+        0x3d => state.registers.a -= 1,
+        _ => println!("Wrong opcode in dcr"),
+    }
+    set_zero(state);
+    set_sign(state);
+    set_parity(state);
+    set_aux_carry(state);
+    state.registers.pc += 1;
+
+}
 pub fn adi(state: &mut State) {
     println!("ADI");
     let result : u16 = u16::from(state.registers.a) + u16::from(state.memory[state.registers.pc+1]);
