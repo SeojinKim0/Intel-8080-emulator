@@ -1,8 +1,11 @@
+use std::process;
+
 use crate::cpu_state::*;
 
 pub fn test(state: &mut State) {
-    state.registers.a = 0b11000101;
-    set_parity(state);
+    // state.registers.a = 0b11000101;
+    // set_parity(state);
+    println!("{}", state.memory.len());
 }
 
 // ########## HELPER FUCTIONS ############
@@ -16,16 +19,6 @@ fn set_sign(state: &mut State) {
 }
 /// Set when it's even parity. reset otherwise
 fn set_parity(state: &mut State) {
-    // let binary_repr = format!("{:b}", state.registers.a);
-    // let binary_sum = binary_repr.chars()
-    //     .filter_map(|x| Some((x.to_digit(2).unwrap()==1) as usize))
-    //     .sum::<usize>();
-    // if binary_sum % 2 == 0 {
-    //     state.flags.p = 1;
-    // } else {
-    //     state.flags.p = 0;
-    // }
-    //
     // 1001 0110
     //      1001 >> 4
     //      1111
@@ -68,16 +61,50 @@ fn reset_aux_carry(state: &mut State) {
     *                                                          *
     ************************************************************
 */
+pub fn xchg (state: &mut State) {
+    println!("XCHG");
+    let tmp_h = state.registers.h;
+    let tmp_l = state.registers.l;
+    state.registers.h = state.registers.d;
+    state.registers.l = state.registers.e;
+    state.registers.d = tmp_h;
+    state.registers.e = tmp_l;
+    state.registers.pc += 1;
+}
+
+pub fn mvi(state: &mut State, opcode: u8) {
+    println!("MVI");
+    match opcode {
+        0x06 => state.registers.b = state.memory[state.registers.pc+1],
+        0x0e => state.registers.c = state.memory[state.registers.pc+1],
+        0x16 => state.registers.d = state.memory[state.registers.pc+1],
+        0x1e => state.registers.e = state.memory[state.registers.pc+1],
+        0x26 => state.registers.h = state.memory[state.registers.pc+1],
+        0x2e => state.registers.l = state.memory[state.registers.pc+1],
+        0x36 => state.memory[usize::from(state.registers.h) << 8 | usize::from(state.registers.l)] = state.memory[state.registers.pc+1],
+        0x3e => state.registers.a = state.memory[state.registers.pc+1],
+        _ => println!("Wrong opcode in mvi"),
+    }
+    state.registers.pc += 2;
+}
 pub fn mov(state: &mut State, opcode: u8) {
     println!("MOV");
 
 }
 pub fn lxi(state: &mut State, opcode: u8) {
     println!("LXI");
-    match &opcode {
+    match opcode {
         0x01 => {
             state.registers.b = state.memory[state.registers.pc+2];
             state.registers.c = state.memory[state.registers.pc+1];
+        }
+        0x11 => {
+            state.registers.d = state.memory[state.registers.pc+2];
+            state.registers.e = state.memory[state.registers.pc+1];
+        }
+        0x21 => {
+            state.registers.h = state.memory[state.registers.pc+2];
+            state.registers.l = state.memory[state.registers.pc+1];
         }
         0x31 => {
             state.registers.sp = usize::from(state.memory[state.registers.pc+2]) << 8 | usize::from(state.memory[state.registers.pc+1]);
@@ -233,8 +260,191 @@ pub fn jmp_cond(state: &mut State, opcode: u8) {
         0xfa => jm(state),
         _ => println!("Wrong opcode in jmp_cond"),
     }
-
 }
+
+pub fn call_cond(state: &mut State, opcode: u8) {
+    match opcode {
+        0xc4 => cnz(state),
+        0xcc => cz(state),
+        0xcd => call(state),
+        0xd4 => cnc(state),
+        0xdc => cc(state),
+        0xe4 => cpo(state),
+        0xec => cpe(state),
+        0xf4 => cp(state),
+        0xfc => cm(state),
+        _ => println!("Wrong opcode in call_cond"),
+    }
+}
+
+pub fn ret_cond(state: &mut State, opcode: u8) {
+    match opcode {
+        0xc0 => rnz(state),
+        0xc8 => rz(state),
+        0xc9 => ret(state),
+        0xd0 => rnc(state),
+        0xd8 => rc(state),
+        0xe0 => rpo(state),
+        0xe8 => rpe(state),
+        0xf0 => rp(state),
+        0xf8 => rm(state),
+        _ => println!("Wrong opcode in ret_cond"),
+    }
+}
+
+fn ret(state: &mut State) {
+    println!("RET");
+    println!("sp: {:#x}", state.registers.sp);
+    println!("Memory[{:#x}]:{:#x}\nMemory[{:#x}]:{:#x}", state.registers.sp+1, state.memory[state.registers.sp+1], state.registers.sp, state.memory[state.registers.sp]);
+    state.registers.pc = usize::from(state.memory[state.registers.sp+1]) << 8 | usize::from(state.memory[state.registers.sp]);
+    state.registers.sp += 2;
+}
+
+fn rnz(state: &mut State) {
+    println!("RNZ");
+    if state.flags.z == 0 {
+        ret(state);
+    } else {
+        state.registers.pc += 1;
+    }
+}
+
+fn rz(state: &mut State) {
+    println!("RZ");
+    if state.flags.z == 1 {
+        ret(state);
+    } else {
+        state.registers.pc += 1;
+    }
+}
+
+fn rnc(state: &mut State) {
+    println!("RNC");
+    if state.flags.cy == 0 {
+        ret(state);
+    } else {
+        state.registers.pc += 1;
+    }
+}
+fn rc(state: &mut State) {
+    println!("RC");
+    if state.flags.cy == 1 {
+        ret(state);
+    } else {
+        state.registers.pc += 1;
+    }
+}
+fn rpo(state: &mut State) {
+    println!("RPO");
+    if state.flags.p == 0 {
+        ret(state);
+    } else {
+        state.registers.pc += 1;
+    }
+}
+fn rpe(state: &mut State) {
+    println!("RPE");
+    if state.flags.p == 1 {
+        ret(state);
+    } else {
+        state.registers.pc += 1;
+    }
+}
+fn rp(state: &mut State) {
+    println!("RP");
+    if state.flags.s == 0 {
+        ret(state);
+    } else {
+        state.registers.pc += 1;
+    }
+}
+fn rm(state: &mut State) {
+    println!("RM");
+    if state.flags.s == 1 {
+        ret(state);
+    } else {
+        state.registers.pc += 1;
+    }
+}
+
+
+fn call(state: &mut State) {
+    println!("CALL");
+    let next_instr = state.registers.pc+3;
+    state.memory[state.registers.sp-1] = ((next_instr >> 8) & 0xff) as u8;
+    state.memory[state.registers.sp-2] = (next_instr & 0xff) as u8;
+    println!("Memory[{:#x}]: {:#x}\nMemory[{:#x}]: {:#x}", state.registers.sp-1,  state.memory[state.registers.sp-1], state.registers.sp-2,state.memory[state.registers.sp-2]);
+
+    state.registers.sp -= 2;
+    jmp(state);
+    // state.registers.pc = usize::from(state.memory[state.registers.pc+2]) << 8 | usize::from(state.memory[state.registers.pc+1]);
+}
+
+fn cnz(state: &mut State) {
+    println!("CNZ");
+    if state.flags.z == 0 {
+        call(state);
+    } else {
+        state.registers.pc += 3;
+    }
+}
+fn cz(state: &mut State) {
+    println!("CZ");
+    if state.flags.z == 1 {
+        call(state);
+    } else {
+        state.registers.pc += 3;
+    }
+}
+fn cnc(state: &mut State) {
+    println!("CNC");
+    if state.flags.cy == 0 {
+        call(state);
+    } else {
+        state.registers.pc += 3;
+    }
+}
+fn cc(state: &mut State) {
+    println!("CC");
+    if state.flags.cy == 1 {
+        call(state);
+    } else {
+        state.registers.pc += 3;
+    }
+}
+fn cpo(state: &mut State) {
+    println!("CPO");
+    if state.flags.p == 0 {
+        call(state);
+    } else {
+        state.registers.pc += 3;
+    }
+}
+fn cpe(state: &mut State) {
+    println!("CPE");
+    if state.flags.p == 1 {
+        call(state);
+    } else {
+        state.registers.pc += 3;
+    }
+}
+fn cp(state: &mut State) {
+    println!("CP");
+    if state.flags.s == 0 {
+        call(state);
+    } else {
+        state.registers.pc += 3;
+    }
+}
+fn cm(state: &mut State) {
+    println!("CM");
+    if state.flags.s == 1 {
+        call(state);
+    } else {
+        state.registers.pc += 3;
+    }
+}
+
 fn jnz(state: &mut State) {
     println!("JNZ");
     if state.flags.z == 0 {
@@ -315,6 +525,32 @@ fn jm(state: &mut State) {
     *                                                          *
     ************************************************************
 */
+
+pub fn push(state: &mut State, opcode: u8) {
+    println!("PUSH");
+    match opcode {
+        0xc5 => {
+            state.memory[state.registers.sp-1] = state.registers.b;
+            state.memory[state.registers.sp-2] = state.registers.c;
+        }
+        0xd5 => {
+            state.memory[state.registers.sp-1] = state.registers.d;
+            state.memory[state.registers.sp-2] = state.registers.e;
+        }
+        0xe5 => {
+            state.memory[state.registers.sp-1] = state.registers.h;
+            state.memory[state.registers.sp-2] = state.registers.l;
+        }
+        0xf5 => {
+            state.memory[state.registers.sp-1] = state.registers.a;
+            state.memory[state.registers.sp-2] = 0b00000010 | state.flags.cy | (state.flags.p << 2) | (state.flags.ac << 4) | (state.flags.z << 6) | (state.flags.s << 7);
+        }
+        _ => todo!(),
+    }
+    state.registers.sp -=2;
+    state.registers.pc += 1;
+
+}
 pub fn hlt(state: &mut State){
 
 }

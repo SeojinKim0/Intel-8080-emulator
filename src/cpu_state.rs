@@ -37,6 +37,6 @@ pub struct State {
 impl State {
     // TODO: set pc default to 0
     pub fn new() -> Self {
-        State { registers: Registers::default(), memory: vec![], flags: Flags::new()}
+        State { registers: Registers::default(), memory: vec![0; 6400], flags: Flags::new()}
     }
 }
