@@ -5,12 +5,11 @@ pub struct Flags {
     pub p: u8,
     pub cy: u8,
     pub ac: u8,
-    pub pad: u8,
 }
 
 impl Flags {
     fn new() -> Self {
-        Flags { s: 0, z: 0, p: 0, cy: 0, ac: 0, pad: 0, }
+        Flags { s: 0, z: 0, p: 0, cy: 0, ac: 0}
     }
 }
 
